@@ -1,0 +1,2 @@
+Flask-script - used for creating a shell script
+docs and how to init : https://flask-script.readthedocs.io/en/latest/
