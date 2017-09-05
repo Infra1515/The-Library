@@ -32,8 +32,8 @@ class User(UserMixin, db.Model):
     @password.setter
     def password(self, password):
         """
-        Calls generate_password_hash and the result is written to password_hash
-        field.
+        Calls generate_password_hash and the result is
+        written to password_hash field in the user model.
         generate_password_hash(password, method=pbkdf2:sha1, salt_length=8) :
         This function takes a plain-text password and returns the password
         hash as a string that can be stored in the user database.
@@ -48,7 +48,7 @@ class User(UserMixin, db.Model):
         """
         return check_password_hash(self.password_hash, password)
 
-    # methods used for user confirmation
+    # methods used for user account confirmation
     def generate_confirmation_token(self, expiration = 3600):
         """
         Function to generate confirmation tokens. Serializer class takes
@@ -77,6 +77,50 @@ class User(UserMixin, db.Model):
         if data.get('confirm') != self.id:
             return False
         self.confirmed = True
+        db.session.add(self)
+        # db.session.commit() must be added or the DB wont be register the change
+        db.session.commit()
+        return True
+
+    # functions for reseting user password
+    def generate_reset_token(self, expiration=3600):
+        s = Serializer(current_app.config['SECRET_KEY'], expiration)
+        return s.dumps({'reset': self.id})
+
+    def reset_password(self, token, new_password):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except:
+            return False
+        if data.get('reset') != self.id:
+            return False
+        self.password = new_password
+        db.session.add(self)
+        db.session.commit()
+        return True
+
+    #functions for changing the user email
+    def generate_email_change_token(self, new_email, expiration=3600):
+        s = Serializer(current_app.config['SECRET_KEY'], expiration)
+        return s.dumps({'change_email': self.id, 'new_email': new_email})
+
+    def change_email(self,token):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except:
+            return False
+        if data.get('change_email') != self.id:
+            return False
+        new_email = data.get('new_email')
+        if new_email is None:
+            return False
+        if self.query.filter_by(email=new_email).first() is not None:
+            return False
+        self.email = new_email
+        db.session.add(self)
+        db.session.commit()
         return True
 
     def __repr__(self):
