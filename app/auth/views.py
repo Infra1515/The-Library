@@ -5,8 +5,9 @@ from . import auth
 from .. import db
 from ..models import User
 from ..email import send_email
-from. forms import LoginForm, RegistrationForm,ChangePasswordForm, \
+from . forms import LoginForm, RegistrationForm,ChangePasswordForm, \
     ResetPasswordRequestForm, ResetPasswordForm, EmailAdressChangeForm
+from . oauth import OAuthSignIn
 
 @auth.before_app_request
 def before_request():
@@ -39,6 +40,46 @@ def login():
             return redirect(request.args.get('next') or url_for('main.index'))
         flash('Invalid username or password.')
     return render_template('auth/login.html', form=form)
+
+@auth.route('/authorize/<provider>')
+def oauth_authorize(provider):
+    if not current_user.is_anonymous:
+        return redirect(url_for('main.index'))
+    oauth = OAuthSignIn.get_provider(provider)
+    return oauth.authorize()
+
+@auth.route('/callback/<provider>')
+def oauth_callback(provider):
+    if not current_user.is_anonymous:
+        return redirect(url_for('main.index'))
+    oauth = OAuthSignIn.get_provider(provider)
+    if 'facebook' in provider:
+        social_id, username, email = oauth.callback()
+        if social_id is None:
+            flash('Authentication failed.')
+            return redirect(url_for('main.index'))
+        user = User.query.filter_by(social_id = social_id).first()
+        if not user:
+            user = User(social_id = social_id, username=username, email = email)
+            db.session.add(user)
+            db.session.commit()
+
+    if 'google' in provider:
+        username, email = oauth.callback()
+        if email is None:
+            flash('Authentication failed.')
+            return redirect(url_for('index'))
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            nickname = username
+            if nickname is None or nickname == "":
+                    nickname = email.split('@')[0]
+
+            user = User(nickname=nickname,email=email)
+            db.session.add(user)
+            db.session.commit()
+    login_user(user, True)
+    return redirect(url_for('main.index'))
 
 @auth.route('/logout')
 @login_required

@@ -6,7 +6,7 @@ more info: https://flask-script.readthedocs.io/en/latest/.
 Main functions : $./manage.py runserver -p 5xxx - runs the application
 $./manage.py db upgrade; $./manage.py db migrate - migrates the DB
 $./manage.py shell - Creates a shell session with the app imported
-$./manage.py tests - Runs the tests in the test folder
+$./manage.py test - Runs the tests in the test folder
 """
 
 import os

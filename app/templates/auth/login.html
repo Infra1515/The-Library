@@ -14,5 +14,11 @@
   New User?
   <a href="{{ url_for('auth.register')}}"> Click Here to Register</a>
 </p>
-{% endblock %}
 <p>
+   Or you can jump right in:
+</p>
+<p>
+  <a href = "{{url_for('auth.oauth_authorize', provider ='facebook')}}">Login with Facebook</a></p>
+  <a href = "{{url_for('auth.oauth_authorize', provider ='google')}}">Login with Google</a></p>
+</p>
+{% endblock %}

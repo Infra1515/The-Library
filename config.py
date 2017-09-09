@@ -5,7 +5,7 @@ import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY') 
+    SECRET_KEY = os.environ.get('SECRET_KEY')
     SQLALCHEMY_COMMIT_ON_TEARDOWON = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAIL_SERVER = 'smtp.googlemail.com'
@@ -16,6 +16,16 @@ class Config:
     THE_LIBRARY_SUBJECT_PREFIX = '[The_Librarian]'
     THE_LIBRARY_SENDER = 'The Library Admin @ <library@example.com'
     THE_LIBRARY_ADMIN = os.environ.get("LIBRARY_ADMIN")
+    OAUTH_CREDENTIALS = {
+    'facebook': {
+    'id': '1831381967192273',
+    'secret' : 'c0e105c47531d2d58a1a1ef899c288b9'
+    },
+    'google' : {
+    'id' : '1003654119130-8e7q6h264efdvfn7v6gi08iilj9fhmso.apps.googleusercontent.com',
+    'secret' : 'BwSODsGC6odf1gOOZJ5rsOdb'
+    }
+}
 
     @staticmethod
     def init_app(app):
@@ -37,7 +47,6 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         'sqlite:///' + os.path.join(basedir, 'data.sqlite')
-
 
 config = {
     'development': DevelopmentConfig,
