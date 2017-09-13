@@ -8,6 +8,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from config import config
 
+
 # Initializes the extensions without giving arguments to their
 # constructors in order to be able to set different config parameters below
 
@@ -34,6 +35,7 @@ def create_app(config_name):
     moment.init_app(app)
     db.init_app(app)
     login_manager.init_app(app)
+
 
 # Blueprint registration
     from .main import main as main_blueprint

@@ -1,15 +1,61 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import current_app
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from flask_login import UserMixin
+from flask_login import UserMixin, AnonymousUserMixin
 from . import db, login_manager
 
+class Permission:
+    """ Bitflags denoting the permission of the user and therefore its role
+    7 = normal user, 15 = moderator, 128 = adminstrator
+    """
+    FOLLOW = 0x01
+    COMMENT = 0x02
+    WRITE_ARTICLES = 0x04
+    MODERATE_COMMENTS = 0x08
+    ADMINISTER = 0x80
 
 class Role(db.Model):
+    """ Class that defines the permission each user has.
+    Users are assigned a discrete role, but the roles are defined in
+    terms of permissions.
+    The default field is set to True for only one role and False for all others.
+    The role marked as default is the one assigned to new users upon registration.
+    The permission field - integer that will be used as bitflag marking the
+    permissions that a user has. Defined in the Permission class
+    """
     __tablename__ = 'roles'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
+    default = db.Column(db.Boolean, default=False, index=True)
+    permissions = db.Column(db.Integer)
     users = db.relationship('User', backref='role', lazy='dynamic')
+
+
+    @staticmethod
+    def insert_roles():
+        """ class method for adding roles automatically to the DB.
+        Does not create new role objects but tries to find existing ones
+        and update them.
+        """
+        roles = {
+            'User': (Permission.FOLLOW |
+                     Permission.COMMENT |
+                     Permission.WRITE_ARTICLES, True),
+            'Moderator': (Permission.FOLLOW |
+                          Permission.COMMENT |
+                          Permission.WRITE_ARTICLES |
+                          Permission.MODERATE_COMMENTS, False),
+            'Administrator': (0xff, False)
+        }
+        for r in roles:
+            role = Role.query.filter_by(name=r).first()
+            if role is None:
+                role = Role(name=r)
+            role.permissions = roles[r][0]
+            role.default = roles[r][1]
+            db.session.add(role)
+        db.session.commit()
+
 
     def __repr__(self):
         return '<Role %r>' % self.name
@@ -24,6 +70,19 @@ class User(UserMixin, db.Model):
     social_id = db.Column(db.String(64), unique = True)
     password_hash = db.Column(db.String(128))
     confirmed = db.Column(db.Boolean, default = False)
+
+    def __init__(self, **kwargs):
+        """ Constructor for the User model. Inherits from base class.
+        If object has role, assigns one depending on email.
+        if email == adminstrator = gives admin priviliges
+        else gives default permissions(user)
+        """
+        super(User, self).__init__(**kwargs)
+        if self.role is None:
+            if self.email == current_app.config['THE_LIBRARY_ADMIN']:
+                self.role = Role.query.filter_by(permissions=0xff).first()
+            if self.role is None:
+                self.role = Role.query.filter_by(default=True).first()
 
     # methods for hashing the User password.
     @property
@@ -124,9 +183,40 @@ class User(UserMixin, db.Model):
         db.session.commit()
         return True
 
+    # functions for evaluating whether a user has a role
+    def can(self, permissions):
+        """
+        Performs a bitwise 'and' operation between the requested
+        permission and the permission assigned to the role.
+        Returns True if all the requested bits are in the role and the
+        user is allowed to perform the task
+        """
+        return self.role is not None and \
+            (self.role.permissions & permissions) == permissions
+
+    def is_administrator(self):
+        """ Checks if the user is an admnistrator by comparing bitflags
+        in role and needed bitflags for administrator rights
+        """
+        return self.can(Permission.ADMINISTER)
+
     def __repr__(self):
         return '<User %r>' % self.username
 
+class AnonymousUser(AnonymousUserMixin):
+    """ Defines can and is_administrator for anonymous users.
+    This will enable the application to freely
+    call current_user.can() and current_user.is_administrator() without
+    having to check whether the user is logged in first.
+    """
+
+    def can(self, permissions):
+        return False
+
+    def is_administrator(self):
+        return False
+
+login_manager.anonymous_user = AnonymousUser
 @login_manager.user_loader
 def load_user(user_id):
     """ Callback function required by Flask-Login. Loads user given the
