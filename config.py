@@ -25,6 +25,8 @@ class Config:
     'id' : '1003654119130-8e7q6h264efdvfn7v6gi08iilj9fhmso.apps.googleusercontent.com',
     'secret' : 'BwSODsGC6odf1gOOZJ5rsOdb'
     }
+    UPLOAD_FOLDER = '/home/infra/GitHub/The-Library/app/static/uploads'
+    ALLOWED_EXTENSIONS = 'set(['png', 'jpg', 'jpeg', 'gif'])'
 }
 
     @staticmethod
