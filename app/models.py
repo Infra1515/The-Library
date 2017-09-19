@@ -6,6 +6,7 @@ from flask_login import UserMixin, AnonymousUserMixin
 from . import db, login_manager
 import hashlib
 
+
 class Permission:
     """ Bitflags denoting the permission of the user and therefore its role
     7 = normal user, 15 = moderator, 128 = adminstrator
@@ -78,7 +79,10 @@ class User(UserMixin, db.Model):
     member_since = db.Column(db.DateTime(), default = datetime.utcnow)
     last_seen = db.Column(db.DateTime(), default = datetime.utcnow)
     avatar_hash = db.Column(db.String(32))
-    
+    profile_picture_filename = db.Column(db.String(64), default=None)
+    profile_picture_url = db.Column(db.String(64),default=None)
+    profile_picture_service = db.Column(db.String(64),default=None)
+
 
     def __init__(self, **kwargs):
         """ Constructor for the User model. Inherits from base class.
@@ -95,7 +99,7 @@ class User(UserMixin, db.Model):
                 self.role = Role.query.filter_by(default=True).first()
         # generates avatar hash
         if self.email is not None and self.avatar_hash is None:
-            self.avatar_hash = hahslib.md5(
+            self.avatar_hash = hashlib.md5(
                 self.email.encode('utf-8')).hexdigest()
 
     # methods for hashing the User password.
@@ -220,7 +224,7 @@ class User(UserMixin, db.Model):
     def ping(self):
         self.last_seen = datetime.utcnow()
         db.session.add(self)
-    # functions for generating user avatar
+    # functions for generating user avatar or profile picture
     def gravatar(self, size=100, default = 'mm', rating='g'):
         """ Takes as args size of avatar in pixels, type of icon
         and its rating - g,pg,r,x - indicates if an image is appropriate for
@@ -235,6 +239,13 @@ class User(UserMixin, db.Model):
         hash = self.avatar_hash or hashlib.md5(self.email.encode('utf-8')).hexdigest()
         return '{url}/{hash}?s={size}&d={default}&r{rating}'.format(
             url=url, hash=hash, size=size, default=default, rating=rating)
+
+    def allowed_file(self, filename):
+        """
+        Checks if the uploaded by the user file is allowed
+        """
+        return '.' in filename and \
+               filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
     def __repr__(self):
         return '<User %r>' % self.username

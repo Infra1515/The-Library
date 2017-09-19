@@ -76,7 +76,7 @@ def oauth_callback(provider):
             if nickname is None or nickname == "":
                     nickname = email.split('@')[0]
 
-            user = User(nickname=nickname,email=email)
+            user = User(username=nickname,email=email)
             db.session.add(user)
             db.session.commit()
     login_user(user, True)

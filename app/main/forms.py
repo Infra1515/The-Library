@@ -1,10 +1,11 @@
+from .. import images
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, BooleanField, SelectField,\
     SubmitField
+from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms.validators import Required, Length, Email, Regexp
 from wtforms import ValidationError
 from ..models import Role, User
-
 
 
 class NameForm(FlaskForm):
@@ -15,6 +16,10 @@ class EditProfileForm(FlaskForm):
     name = StringField("Real name", validators=[Length(0,64)])
     location = StringField("Location", validators=[Length(0,64)])
     about_me = TextAreaField('About me')
+    profile_picture = SelectField(u'Profile picture',
+        choices = [('1','Facebook profile picture'),
+                   ('2','Upload your own file'),
+                   ('3','Use the Gravatar online service')])
     submit = SubmitField('Submit')
 
 class AdminEditProfileForm(FlaskForm):
@@ -29,6 +34,12 @@ class AdminEditProfileForm(FlaskForm):
     name = StringField('Real name', validators=[Length(0,64)])
     location = StringField('Location', validators=[Length(0,64)])
     about_me = TextAreaField('About me')
+    profile_picture = SelectField(u'Profile picture',
+        choices = [('1','Facebook profile picture'),
+                   ('2','Upload your own file'),
+                   ('3','Use the Gravatar online service')])
+    profile_picture_url = StringField("Profile picture URL",
+        validators=[Length(0,256)])
     submit = SubmitField('Submit')
 
     def __init__(self, user, *args, **kwargs):
@@ -47,3 +58,8 @@ class AdminEditProfileForm(FlaskForm):
         if field.data != self.user.username and \
                 User.query.filter_by(username=field.data).first():
             raise ValidationError('Username already in use.')
+
+class UploadForm(FlaskForm):
+    profile_pic = FileField("Select your profile picture",
+            validators=[FileRequired(), FileAllowed(images, 'Images only!')])
+    submit = SubmitField('Submit')

@@ -16,6 +16,7 @@ class Config:
     THE_LIBRARY_SUBJECT_PREFIX = '[The_Librarian]'
     THE_LIBRARY_SENDER = 'The Library Admin @ <library@example.com'
     THE_LIBRARY_ADMIN = os.environ.get("LIBRARY_ADMIN")
+    # need to change to environ
     OAUTH_CREDENTIALS = {
     'facebook': {
     'id': '1831381967192273',
@@ -24,10 +25,14 @@ class Config:
     'google' : {
     'id' : '1003654119130-8e7q6h264efdvfn7v6gi08iilj9fhmso.apps.googleusercontent.com',
     'secret' : 'BwSODsGC6odf1gOOZJ5rsOdb'
-    }
-    UPLOAD_FOLDER = '/home/infra/GitHub/The-Library/app/static/uploads'
-    ALLOWED_EXTENSIONS = 'set(['png', 'jpg', 'jpeg', 'gif'])'
-}
+    }}
+    # need to change to environ
+    TOP_LEVEL_DIR = '/home/infra/GitHub/The-Library'
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+    UPLOADS_DEFAULT_DEST = TOP_LEVEL_DIR + '/app/static/img/'
+    UPLOADS_DEFAULT_URL = 'http://localhost:5000/static/img/'
+    UPLOADED_IMAGES_DEST = TOP_LEVEL_DIR + '/app/static/img/'
+    UPLOADED_IMAGES_URL = 'http://localhost:5000/static/img/'
 
     @staticmethod
     def init_app(app):

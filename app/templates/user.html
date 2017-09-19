@@ -5,7 +5,14 @@
 <div class = "page-header">
       <table>
       <tr valign="top">
+          {% if user.profile_picture_service == '3' %}
           <td><img src="{{ user.gravatar(128) }}"></td>
+          {% endif %}
+          {% if user.profile_picture_service == '2' %}
+          <td><img src="{{ user.profile_picture_url }}" width="200",height="40"></td>
+          {% endif %}
+          {% if user.profile_picture_service == '1' %}
+          {% endif %}
       </tr>
     </table>
         <h1>{{ user.username}}</h1>
