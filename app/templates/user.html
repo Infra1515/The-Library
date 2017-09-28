@@ -11,7 +11,8 @@
           {% if user.profile_picture_service == '2' %}
           <td><img src="{{ user.profile_picture_url }}" width="200",height="40"></td>
           {% endif %}
-          {% if user.profile_picture_service == '1' %}
+          {% if user.social_id and user.profile_picture_service == '1' %}
+          <td><img src ="https://graph.facebook.com/{{ user.social_id }}/picture?type=normal"></td>
           {% endif %}
       </tr>
     </table>

@@ -59,11 +59,19 @@ def oauth_callback(provider):
         if social_id is None:
             flash('Authentication failed.')
             return redirect(url_for('main.index'))
-        user = User.query.filter_by(social_id = social_id).first()
+        user = User.query.filter_by(email = email).first()
+        user.social_id = social_id
+        db.session.add(user)
+        db.session.commit()
+        if(not user.confirmed ):
+            flash('Welcome! You can use your profile picture from Facebook.\
+            To do this and add additional info click the Profile tab ')
         if not user:
             user = User(social_id = social_id, username=username, email = email)
             db.session.add(user)
             db.session.commit()
+            flash('Welcome! The network will use your profile picture from facebook.\
+            To change this and add additional info click the Profile tab ')
 
     if 'google' in provider:
         username, email = oauth.callback()

@@ -127,12 +127,12 @@ class FaceBookSignIn(OAuthSignIn):
             # FB exposes user id and email but does not give usernames. So,
             # the username for the app is constructed from the left portion
             # of the  email adress
-            'facebook$' + me['id'],
+            me['id'],
             me.get('email').split('@')[0],
             me.get('email')
         )
 
-# TO-DO: Implement Google OAuth
+
 class GoogleSignIn(OAuthSignIn):
     """ Class that impelemts GoogleOAuth2 authentication.
     Simmilar to FB API but does not require social_id.

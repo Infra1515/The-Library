@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 Dear {{ user.username }},
 
 Welcome to The Library!

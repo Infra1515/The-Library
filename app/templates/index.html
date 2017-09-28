@@ -8,6 +8,7 @@
     <h1>Hello,
     {% if current_user.is_authenticated %}
     {{ current_user.username }}
+    {{ current_user.social_id}}
     {% else %}
     Stranger
     {% endif %}!

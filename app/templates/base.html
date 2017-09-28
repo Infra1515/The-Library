@@ -44,7 +44,8 @@
                       {% if current_user.profile_picture_service == '2' %}
                       <img src="{{ current_user.profile_picture_url }}" width="30",height="30">
                       {% endif %}
-                      {% if current_user.profile_picture_service == '1' %}
+                      {% if current_user.profile_picture_service == '1' and current_user.social_id %}
+                      <td><img src ="https://graph.facebook.com/{{ current_user.social_id }}/picture?type=small"></td>
                       {% endif %}
                       Account <b class="caret"></b>
                     </a>
