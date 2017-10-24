@@ -12,6 +12,7 @@ class NameForm(FlaskForm):
     name = StringField('What is your name?', validators=[Required()])
     submit = SubmitField('Submit')
 
+
 class EditProfileForm(FlaskForm):
     name = StringField("Real name", validators=[Length(0,64)])
     location = StringField("Location", validators=[Length(0,64)])
@@ -21,6 +22,7 @@ class EditProfileForm(FlaskForm):
                    ('2','Upload your own file'),
                    ('3','Use the Gravatar online service')])
     submit = SubmitField('Submit')
+
 
 class AdminEditProfileForm(FlaskForm):
     email = StringField('Email', validators = [Required(), Length(1,64),
@@ -63,3 +65,7 @@ class UploadForm(FlaskForm):
     profile_pic = FileField("Select your profile picture",
             validators=[FileRequired(), FileAllowed(images, 'Images only!')])
     submit = SubmitField('Submit')
+
+class PostForm(FlaskForm):
+    body = TextAreaField("Express yourself!", validators=[Required()])
+    submit = SubmitField('Go')

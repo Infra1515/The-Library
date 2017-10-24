@@ -5,7 +5,6 @@ from urllib.request import urlopen
 import codecs
 
 
-
 class OAuthSignIn(object):
     """ Simple abstraction layer on top of rauth so that the code can be used
     generically without being tied to a specific provider configuration.
@@ -44,8 +43,10 @@ class OAuthSignIn(object):
         It is  build using the provider name, so each provider has a dedicated
         route in the views functions
         """
-        return url_for('auth.oauth_callback', provider = self.provider_name,
-                        _external = True)
+        # when defined _external argument returns an absolute url
+        return url_for('auth.oauth_callback', provider=self.provider_name,
+                       _external=True)
+
     @classmethod
     def get_provider(self, provider_name):
         """
@@ -63,10 +64,12 @@ class OAuthSignIn(object):
         # If NoneType error : some function does not return something
         # or the return statement is not reached !!
 
+
 class FaceBookSignIn(OAuthSignIn):
     """ Class which implements the OAuth process specific to Facebook API.
         Inherits from base class.
     """
+
     def __init__(self):
         """ Constructor method. Inherits from the base constructor method and
         initializes it with the provider name. Polls the config for settings.
@@ -82,21 +85,20 @@ class FaceBookSignIn(OAuthSignIn):
         """
         super(FaceBookSignIn, self).__init__('facebook')
         self.service = OAuth2Service(
-            name = 'facebook',
-            client_id = self.consumer_id,
-            client_secret = self.consumer_secret,
-            authorize_url = 'https://graph.facebook.com/oauth/authorize',
-            access_token_url = 'https://graph.facebook.com/oauth/access_token',
-            base_url = 'https://graph.facebook.com/'
+            name='facebook',
+            client_id=self.consumer_id,
+            client_secret=self.consumer_secret,
+            authorize_url='https://graph.facebook.com/oauth/authorize',
+            access_token_url='https://graph.facebook.com/oauth/access_token',
+            base_url='https://graph.facebook.com/'
         )
 
     def authorize(self):
         return redirect(self.service.get_authorize_url(
-            scope = 'email', # requests the user email from Facebook
-            response_type = 'code', # tells FB that it is a web app
-            redirect_uri = self.get_callback_url()) # application route that
-                                                    # provider needs to invoke
-                                                    # after authentication
+            scope='email',  # requests the user email from Facebook
+            response_type='code',  # tells FB that it is a web app
+            redirect_uri=self.get_callback_url())  # application route that
+            # provider needs to invoke after authentication
         )
 
     def callback(self):
@@ -104,6 +106,7 @@ class FaceBookSignIn(OAuthSignIn):
         In the callback() method the provider passes a verification token
         that the application can use to contact the provider's APIs.
         """
+
         def decode_json(payload):
             """ Function to decode the token. FB API returns JSON,
             rauth expects the token in the query string of the request
@@ -115,10 +118,10 @@ class FaceBookSignIn(OAuthSignIn):
 
         # oauth_session object is used to make API calls to the provider.
         oauth_session = self.service.get_auth_session(
-            data = {'code': request.args['code'],
-                    'grant_type' : 'authorization_code',
-                    'redirect_uri' : self.get_callback_url()},
-            decoder = decode_json
+            data={'code': request.args['code'],
+                  'grant_type': 'authorization_code',
+                  'redirect_uri': self.get_callback_url()},
+            decoder=decode_json
         )
 
         me = oauth_session.get('me?fields=id,email').json()
@@ -135,7 +138,7 @@ class FaceBookSignIn(OAuthSignIn):
 
 class GoogleSignIn(OAuthSignIn):
     """ Class that impelemts GoogleOAuth2 authentication.
-    Simmilar to FB API but does not require social_id.
+    Same as FB API but does not require social_id.
     """
 
     def __init__(self):
@@ -144,23 +147,22 @@ class GoogleSignIn(OAuthSignIn):
         """
         super(GoogleSignIn, self).__init__('google')
         googleinfo = urlopen('https://accounts.google.com/.well-known/openid-configuration')
-        reader = codecs.getreader("utf-8") # decodes the JSON
+        reader = codecs.getreader("utf-8")  # decodes the JSON
         google_params = json.load(reader(googleinfo))
         self.service = OAuth2Service(
-                name='google',
-                client_id=self.consumer_id,
-                client_secret=self.consumer_secret,
-                authorize_url=google_params.get('authorization_endpoint'),
-                base_url=google_params.get('userinfo_endpoint'),
-                access_token_url=google_params.get('token_endpoint')
+            name='google',
+            client_id=self.consumer_id,
+            client_secret=self.consumer_secret,
+            authorize_url=google_params.get('authorization_endpoint'),
+            base_url=google_params.get('userinfo_endpoint'),
+            access_token_url=google_params.get('token_endpoint')
         )
-
 
     def authorize(self):
         return redirect(self.service.get_authorize_url(
-            scope = 'email',
-            response_type = 'code',
-            redirect_uri = self.get_callback_url()
+            scope='email',
+            response_type='code',
+            redirect_uri=self.get_callback_url()
         ))
 
     def callback(self):
@@ -174,10 +176,10 @@ class GoogleSignIn(OAuthSignIn):
             return None, None, None
 
         oauth_session = self.service.get_auth_session(
-            data = {'code': request.args['code'],
-                    'grant_type' : 'authorization_code',
-                    'redirect_uri' : self.get_callback_url()},
-                decoder = decode_json
+            data={'code': request.args['code'],
+                  'grant_type': 'authorization_code',
+                  'redirect_uri': self.get_callback_url()},
+            decoder=decode_json
         )
 
         me = oauth_session.get('').json()

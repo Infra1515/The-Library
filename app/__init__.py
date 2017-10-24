@@ -23,7 +23,7 @@ images = UploadSet('images', IMAGES)
 def create_app(config_name):
     """
         This function is the application factory. Takes as an argument the name
-        of a configuration to use from the classes defined in cofig.py and
+        of a configuration to use from the classes defined in config.py and
         constructs the app and the extensions.
     """
     app = Flask(__name__)

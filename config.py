@@ -4,6 +4,7 @@ application.
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
     SQLALCHEMY_COMMIT_ON_TEARDOWON = True
@@ -16,6 +17,7 @@ class Config:
     THE_LIBRARY_SUBJECT_PREFIX = '[The_Librarian]'
     THE_LIBRARY_SENDER = 'The Library Admin @ <library@example.com'
     THE_LIBRARY_ADMIN = os.environ.get("LIBRARY_ADMIN")
+    THE_LIBRARY_POST_PER_PAGE = 10
     # need to change to environ
     OAUTH_CREDENTIALS = {
     'facebook': {
@@ -54,6 +56,7 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         'sqlite:///' + os.path.join(basedir, 'data.sqlite')
+
 
 config = {
     'development': DevelopmentConfig,
