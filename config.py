@@ -18,6 +18,8 @@ class Config:
     THE_LIBRARY_SENDER = 'The Library Admin @ <library@example.com'
     THE_LIBRARY_ADMIN = os.environ.get("LIBRARY_ADMIN")
     THE_LIBRARY_POST_PER_PAGE = 10
+    THE_LIBRARY_FOLLOWERS_PER_PAGE = 10
+    THE_LIBRARY_COMMENTS_PER_PAGE = 10
     # need to change to environ
     OAUTH_CREDENTIALS = {
     'facebook': {

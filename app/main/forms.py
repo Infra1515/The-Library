@@ -3,7 +3,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, BooleanField, SelectField,\
     SubmitField
 from flask_wtf.file import FileField, FileAllowed, FileRequired
-from wtforms.validators import Required, Length, Email, Regexp
+from wtforms.validators import Required, Length, Email, Regexp, InputRequired
 from wtforms import ValidationError
 from ..models import Role, User
 
@@ -61,11 +61,18 @@ class AdminEditProfileForm(FlaskForm):
                 User.query.filter_by(username=field.data).first():
             raise ValidationError('Username already in use.')
 
+
 class UploadForm(FlaskForm):
     profile_pic = FileField("Select your profile picture",
-            validators=[FileRequired(), FileAllowed(images, 'Images only!')])
+                            validators=[FileRequired(), FileAllowed(images, 'Images only!')])
     submit = SubmitField('Submit')
+
 
 class PostForm(FlaskForm):
     body = TextAreaField("Express yourself!", validators=[Required()])
     submit = SubmitField('Go')
+
+
+class CommentForm(FlaskForm):
+    body = StringField('', [InputRequired()])
+    submit = SubmitField('Comment')
