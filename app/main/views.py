@@ -11,16 +11,8 @@ from ..decorators import admin_required, permission_required
 from werkzeug.datastructures import CombinedMultiDict
 
 
-@main.route('/', methods=['GET', 'POST'])
+@main.route('/', methods=['GET'])
 def index():
-    form = PostForm()
-    if current_user.can(Permission.WRITE_ARTICLES) and \
-            form.validate_on_submit():
-        post = Post(body=form.body.data,
-                    author=current_user._get_current_object())
-        db.session.add(post)
-        db.session.commit()
-        return redirect(url_for('.index'))
     page = request.args.get('page', 1, type=int)
     show_followed = False
     if current_user.is_authenticated:
@@ -33,8 +25,24 @@ def index():
         page, per_page=current_app.config['THE_LIBRARY_POST_PER_PAGE'],
         error_out=False)
     posts = pagination.items
-    return render_template('index.html', form=form, posts=posts,
+    return render_template('index.html', posts=posts,
                            show_followed=show_followed, pagination=pagination)
+
+
+@main.route('/new_post', methods=['GET','POST'])
+@login_required
+def new_post():
+    form = PostForm()
+    if current_user.can(Permission.WRITE_ARTICLES) and \
+            form.validate_on_submit():
+        post = Post(title=form.title.data,
+                    body=form.body.data,
+                    author=current_user._get_current_object())
+        db.session.add(post)
+        db.session.commit()
+        return redirect(url_for('.index'))
+    return render_template('new_post.html', form=form)
+
 
 
 @main.route('/user/<username>')

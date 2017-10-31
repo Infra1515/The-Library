@@ -5,6 +5,7 @@ from wtforms import StringField, TextAreaField, BooleanField, SelectField,\
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms.validators import Required, Length, Email, Regexp, InputRequired
 from wtforms import ValidationError
+from flask_pagedown.fields import PageDownField
 from ..models import Role, User
 
 
@@ -69,10 +70,12 @@ class UploadForm(FlaskForm):
 
 
 class PostForm(FlaskForm):
-    body = TextAreaField("Express yourself!", validators=[Required()])
+    title = StringField("Title", [InputRequired()])
+    body = PageDownField("Express yourself!", validators=[Required()])
     submit = SubmitField('Go')
 
 
 class CommentForm(FlaskForm):
     body = StringField('', [InputRequired()])
     submit = SubmitField('Comment')
+

@@ -33,6 +33,11 @@
                   </a>
                 </li>
                 {% endif %}
+                {% if current_user.can(Permission.WRITE_ARTICLES) %}
+                <li>
+                    <a href="{{url_for('main.new_post')}}">New Post</a>
+                </li>
+                {% endif %}
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 {% if current_user.can(Permission.MODERATE_COMMENTS) %}

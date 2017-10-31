@@ -8,6 +8,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from config import config
 from flask_uploads import UploadSet, IMAGES, configure_uploads
+from flask_pagedown import PageDown
 
 # Initializes the extensions without giving arguments to their
 # constructors in order to be able to set different config parameters below
@@ -16,10 +17,13 @@ bootstrap = Bootstrap()
 mail = Mail()
 moment = Moment()
 db = SQLAlchemy()
+images = UploadSet('images', IMAGES)
+pagedown = PageDown()
+
 login_manager = LoginManager()
 login_manager.session_protection = "strong"
 login_manager.login_view = "auth.login"
-images = UploadSet('images', IMAGES)
+
 def create_app(config_name):
     """
         This function is the application factory. Takes as an argument the name
@@ -34,6 +38,7 @@ def create_app(config_name):
     mail.init_app(app)
     moment.init_app(app)
     db.init_app(app)
+    pagedown.init_app(app)
     login_manager.init_app(app)
     configure_uploads(app, images)
 # Blueprint registration
