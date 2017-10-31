@@ -15,10 +15,14 @@ from werkzeug.datastructures import CombinedMultiDict
 def index():
     page = request.args.get('page', 1, type=int)
     show_followed = False
+    show_liked = False
     if current_user.is_authenticated:
         show_followed = bool(request.cookies.get('show_followed', ''))
+        show_liked = bool(request.cookies.get('show_liked', ''))
     if show_followed:
         query = current_user.followed_posts
+    elif show_liked:
+        query = current_user.liked_posts
     else:
         query = Post.query
     pagination = query.order_by(Post.timestamp.desc()).paginate(
@@ -26,7 +30,8 @@ def index():
         error_out=False)
     posts = pagination.items
     return render_template('index.html', posts=posts,
-                           show_followed=show_followed, pagination=pagination)
+                           show_followed=show_followed, show_liked=show_liked,
+                           pagination=pagination)
 
 
 @main.route('/new_post', methods=['GET','POST'])
@@ -234,6 +239,7 @@ def followed_by(username):
 def show_all():
     resp = make_response(redirect(url_for('.index')))
     resp.set_cookie('show_followed', '', max_age=30*24*60*60)
+    resp.set_cookie('show_liked', '', max_age=30*24*60*60)
     return resp
 
 
@@ -243,6 +249,14 @@ def show_followed():
     resp = make_response(redirect(url_for('.index')))
     resp.set_cookie('show_followed', '1', max_age=30*24*60*60)
     return resp
+
+@main.route('/liked')
+@login_required
+def show_liked():
+    resp = make_response(redirect(url_for('.index')))
+    resp.set_cookie('show_liked', '1', max_age=30*24*60*60)
+    return resp
+
 
 
 @main.route('/moderate')
@@ -281,5 +295,28 @@ def moderate_disable(id):
     return redirect(url_for('.moderate',
                             page=request.args.get('page', 1, type=int)))
 
+
+@main.route('/like/<int:id>', methods=['GET', 'POST'])
+@login_required
+def like_post(id):
+    post = Post.query.get_or_404(id)
+    if current_user.is_liking_post(post):
+        flash('You already like this post')
+        return redirect(url_for('.post', id=post.id, page=1))
+    current_user.like_post(post)
+    flash("You now like %s" % post.title)
+    return redirect(url_for('.post', id=post.id))
+
+
+@main.route('/unlike/<int:id>', methods=['GET', 'POST'])
+@login_required
+def unlike_post(id):
+    post = Post.query.get_or_404(id)
+    if not current_user.is_liking_post(post):
+        flash("You are not liking this post.")
+        return redirect(url_for('.post', id=post.id, page=1))
+    current_user.unlike_post(post)
+    flash("You now unlike %s" % post.title)
+    return redirect(url_for('.post', id=post.id))
 
 

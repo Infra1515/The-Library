@@ -78,6 +78,16 @@ class Follow(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class PostLikes(db.Model):
+
+    __tablename__ = 'postlikes'
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'),
+                        primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'),
+                        primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -108,6 +118,10 @@ class User(UserMixin, db.Model):
                                 backref=db.backref('followed', lazy='joined'),
                                 lazy='dynamic',
                                 cascade='all, delete-orphan')
+    post_likes = db.relationship('PostLikes',
+                                 backref=db.backref('user', lazy='joined'),
+                                 lazy='dynamic',
+                                 cascade='all, delete-orphan')
 
     @staticmethod
     def generate_fake(count=100):
@@ -313,7 +327,7 @@ class User(UserMixin, db.Model):
             db.session.add(f)
             db.session.commit()
 
-    def unfollow(self,user):
+    def unfollow(self, user):
         f = self.followed.filter_by(followed_id=user.id).first()
         if f:
             db.session.delete(f)
@@ -335,6 +349,27 @@ class User(UserMixin, db.Model):
         and user_id in Posts"""
         return Post.query.join(Follow, Follow.followed_id == Post.author_id)\
             .filter(Follow.follower_id == self.id)
+
+    def like_post(self, post):
+        if not self.is_liking_post(post):
+            p = PostLikes(user=self, post=post)
+            db.session.add(p)
+            db.session.commit()
+
+    def unlike_post(self, post):
+        p = self.post_likes.filter_by(post_id=post.id).first()
+        if p:
+            db.session.delete(p)
+            db.session.commit()
+
+    def is_liking_post(self, post):
+        return self.post_likes.filter_by(
+            post_id=post.id).first() is not None
+
+    @property
+    def liked_posts(self):
+        return Post.query.join(PostLikes, PostLikes.post_id == Post.id) \
+            .filter(PostLikes.user_id == self.id)
 
     def __repr__(self):
         return '<User %r>' % self.username
@@ -376,6 +411,8 @@ class Post(db.Model):
     timestamp = db.Column(db.DateTime, index = True, default = datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     comments = db.relationship('Comment', backref='post', lazy='dynamic')
+    user_likes = db.relationship('PostLikes', backref=db.backref('post', lazy='joined'),
+                                 lazy='dynamic', cascade='all, delete-orphan')
 
     @staticmethod
     def generate_fake(count=100):

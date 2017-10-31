@@ -41,6 +41,15 @@
                  <a href="{{ url_for('.post', id=post.id) }}#comments">
                     <span class="label label-primary">{{ post.comments.count() }} Comments</span>
                 </a>
+                {% if not current_user.is_liking_post(post) %}
+                <a href="{{ url_for('.like_post', id=post.id) }}">
+                    <span class="label label-primary">Like</span>
+                </a>
+                {% else %}
+                <a href="{{ url_for('.unlike_post', id=post.id) }}">
+                    <span class="label label-primary">Unlike</span>
+                </a>
+                {% endif %}
             </div>
         </div>
     </li>
