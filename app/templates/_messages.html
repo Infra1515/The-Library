@@ -1,0 +1,32 @@
+<ul class="posts">
+    {% for message in messages %}
+    <li class="post">
+        <div class="post-thumbnail">
+            <a href="{{ url_for('.user', username=message.sender.username) }}">
+                     {% if message.sender.profile_picture_service == '3' %}
+                     <img class="img-rounded profile-thumbnail" src="{{ message.sender.gravatar(size=40) }}">
+                     {% endif %}
+                     {% if message.sender.profile_picture_service == '2' %}
+                     <img class="img-rounded profile-thumbnail" src="{{ message.sender.profile_picture_url }}" width="40", height="50">
+                     {% endif %}
+                     {% if message.sender.profile_picture_service == '1' and message.sender.social_id %}
+                     <img class="img-rounded profile-thumbnail" src="https://graph.facebook.com/{{message.sender.social_id }}/picture?width=40&height=50">
+                     {% endif %} }}">
+            </a>
+        </div>
+        <div class="post-content">
+            <div class="post-date">{{ moment(message.timestamp).fromNow() }}</div>
+            <div class="post-author">From: <a href="{{ url_for('.user', username=message.sender.username) }}">{{ message.sender.username }}</a></div>
+            <div class="post-author">To: <a href="{{ url_for('.user', username=message.receiver.username) }}">{{ message.receiver.username }}</a></div>
+            <div class="post-title">About: <a href="{{ url_for('.message', id=message.id) }}">{{ message.subject }}</a></div>
+            <div class="post-body">
+                {% if message.body_html %}
+                    {{ message.body_html | safe }}
+                {% else %}
+                    {{ message.body }}
+                {% endif %}
+            </div>
+        </div>
+    </li>
+    {% endfor %}
+</ul>

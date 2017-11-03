@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}The Library - New pm{% endblock %}
+
+{% block page_content %}
+<div class="comment-form">
+    {{ wtf.quick_form(form) }}
+</div>
+{% endblock %}

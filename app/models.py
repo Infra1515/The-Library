@@ -88,6 +88,31 @@ class PostLikes(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class PersonalMessage(db.Model):
+
+    __tablename__ = 'pm'
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text);
+    body_html = db.Column(db.Text)
+    subject = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    receiver_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    is_read = db.Column(db.Boolean)
+
+    @staticmethod
+    def on_changed_body(target, value, oldvalue, initiator):
+        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
+                        'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
+                        'h1', 'h2', 'h3', 'p', '![]']
+        target.body_html = bleach.linkify(bleach.clean(
+            markdown(value, output_format='html'),
+            tags=allowed_tags, strip=True))
+
+
+db.event.listen(PersonalMessage.body, 'set', PersonalMessage.on_changed_body)
+
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -100,14 +125,25 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(64))
     location = db.Column(db.String(64))
     about_me = db.Column(db.Text)
-    member_since = db.Column(db.DateTime(), default = datetime.utcnow)
-    last_seen = db.Column(db.DateTime(), default = datetime.utcnow)
+    member_since = db.Column(db.DateTime(), default=datetime.utcnow)
+    last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
     avatar_hash = db.Column(db.String(32))
     profile_picture_filename = db.Column(db.String(64), default=None)
-    profile_picture_url = db.Column(db.String(64),default=None)
-    profile_picture_service = db.Column(db.String(64),default=None)
+    profile_picture_url = db.Column(db.String(64), default=None)
+    profile_picture_service = db.Column(db.String(64), default=None)
     posts = db.relationship('Post', backref='author', lazy='dynamic')
     comments = db.relationship("Comment", backref='author', lazy='dynamic')
+
+    sent_messages = db.relationship("PersonalMessage",
+                                    foreign_keys=[PersonalMessage.sender_id],
+                                    backref='sender',
+                                    lazy='dynamic')
+
+    received_messages = db.relationship("PersonalMessage",
+                                        foreign_keys=[PersonalMessage.receiver_id],
+                                        backref="receiver",
+                                        lazy='dynamic')
+
     followed = db.relationship('Follow',
                                foreign_keys=[Follow.follower_id],
                                backref=db.backref('follower', lazy='joined'),
@@ -118,6 +154,7 @@ class User(UserMixin, db.Model):
                                 backref=db.backref('followed', lazy='joined'),
                                 lazy='dynamic',
                                 cascade='all, delete-orphan')
+
     post_likes = db.relationship('PostLikes',
                                  backref=db.backref('user', lazy='joined'),
                                  lazy='dynamic',
@@ -438,10 +475,8 @@ class Post(db.Model):
             markdown(value, output_format='html'),
             tags=allowed_tags, strip=True))
 
+
 db.event.listen(Post.body, 'set', Post.on_changed_body)
-
-
-
 
 
 class Comment(db.Model):
@@ -453,3 +488,4 @@ class Comment(db.Model):
     disabled = db.Column(db.Boolean)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
+

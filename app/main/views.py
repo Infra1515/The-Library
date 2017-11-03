@@ -3,10 +3,10 @@ from flask import render_template, redirect, url_for, abort, flash, request, \
 from flask_login import login_required, current_user
 from . import main
 from .forms import EditProfileForm, AdminEditProfileForm, UploadForm, PostForm, \
-    CommentForm
+    CommentForm, PMForm
 from .. import db
 from .. import images
-from ..models import Role, User, Permission, Post, Comment
+from ..models import Role, User, Permission, Post, Comment, PersonalMessage
 from ..decorators import admin_required, permission_required
 from werkzeug.datastructures import CombinedMultiDict
 
@@ -124,7 +124,6 @@ def upload_profile_picture():
             flash('Profile picture sucessfully uploaded')
             return redirect(url_for('.user', username=current_user.username))
     return render_template('profile_picture_upload.html', form=form)
-
 
 @main.route('/post/<int:id>', methods=['GET', 'POST'])
 def post(id):
@@ -250,6 +249,7 @@ def show_followed():
     resp.set_cookie('show_followed', '1', max_age=30*24*60*60)
     return resp
 
+
 @main.route('/liked')
 @login_required
 def show_liked():
@@ -319,4 +319,67 @@ def unlike_post(id):
     flash("You now unlike %s" % post.title)
     return redirect(url_for('.post', id=post.id))
 
+
+@login_required
+@main.route('/new_pm', methods=['GET', 'POST'])
+def pm():
+    form = PMForm()
+    if current_user.can(Permission.WRITE_ARTICLES) and \
+            form.validate_on_submit():
+        receiver = User.query.filter_by(username=form.receiver.data).first()
+        if receiver is None:
+            flash("No such user. Check username!")
+        else:
+            pm = PersonalMessage(subject=form.subject.data,
+                                 body=form.body.data,
+                                 sender=current_user._get_current_object(),
+                                 receiver=receiver)
+            db.session.add(pm)
+            db.session.commit()
+            return redirect(url_for('.show_sent'))  # must return to inbox
+    return render_template('new_pm.html', form=form)
+
+
+@login_required
+@main.route('/inbox', methods=['GET'])
+def inbox():
+    page = request.args.get('page', 1, type=int)
+    show_received = False
+    if current_user.is_authenticated:
+        show_received = bool(request.cookies.get('show_received', ''))
+    if show_received:
+        query = current_user.received_messages
+    else:
+        query = current_user.sent_messages
+
+    pagination = query.order_by(PersonalMessage.timestamp.desc()).paginate(
+        page, per_page=current_app.config['THE_LIBRARY_POST_PER_PAGE'],
+        error_out=False)
+
+    messages = pagination.items
+    return render_template('inbox.html', messages=messages,
+                           show_sent=show_sent, show_received=show_received,
+                           pagination=pagination)
+
+@login_required
+@main.route('/inbox/message/<int:id>', methods=['GET', 'POST'])
+def message(id):
+    message = PersonalMessage.query.get_or_404(id)
+    return render_template('message.html', messages=[message])
+
+
+@main.route('/inbox/received')
+@login_required
+def show_received():
+    resp = make_response(redirect(url_for('.inbox')))
+    resp.set_cookie('show_received', '1', max_age=30*24*60*60)
+    return resp
+
+
+@main.route('/inbox/sent')
+@login_required
+def show_sent():
+    resp = make_response(redirect(url_for('.inbox')))
+    resp.set_cookie('show_received', '', max_age=30*24*60*60)
+    return resp
 

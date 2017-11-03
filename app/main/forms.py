@@ -79,3 +79,16 @@ class CommentForm(FlaskForm):
     body = StringField('', [InputRequired()])
     submit = SubmitField('Comment')
 
+
+class PMForm(FlaskForm):
+    receiver = StringField('Receiver', [InputRequired()])
+    subject = StringField('Subject', [InputRequired()])
+    body = PageDownField("Text", [InputRequired()])
+    submit = SubmitField('Send')
+
+
+
+
+
+
+

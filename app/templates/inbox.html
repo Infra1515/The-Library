@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}The Library - Home {% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>Hello, {{current_user.username}}! This is your Inbox.</h1>
+    <h2>To send a new message <a href="{{ url_for('.pm') }} "> Click here </a></h2>
+</div>
+<div class="post-tabs">
+    <ul class="nav nav-tabs">
+
+        <li{% if not show_received %} class="active" {% endif %}><a href="{{ url_for('.show_sent') }}">Sent</a></li>
+        <li{% if show_received %} class="active"{% endif %}><a href="{{ url_for('.show_received') }}">Received</a></li>
+    </ul>
+    {% include '_messages.html' %}
+</div>
+{% if pagination %}
+<div class="pagination">
+    {{ macros.pagination_widget(pagination, '.index') }}
+</div>
+{% endif %}
+{% endblock %}
