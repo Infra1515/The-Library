@@ -8,7 +8,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
     SQLALCHEMY_COMMIT_ON_TEARDOWON = True
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_TRACK_MODIFICATIONS = True
     MAIL_SERVER = 'smtp.googlemail.com'
     MAIL_PORT = 587
     MAIL_USE_TLS = True
@@ -37,7 +37,8 @@ class Config:
     UPLOADS_DEFAULT_URL = 'http://localhost:5000/static/img/'
     UPLOADED_IMAGES_DEST = TOP_LEVEL_DIR + '/app/static/img/'
     UPLOADED_IMAGES_URL = 'http://localhost:5000/static/img/'
-
+    WHOOSH_BASE = os.path.join(basedir, 'search.db')
+    MAX_SEARCH_RESULTS = 50
     @staticmethod
     def init_app(app):
         pass

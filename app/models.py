@@ -7,6 +7,9 @@ from . import db, login_manager
 from markdown import markdown
 import bleach
 import hashlib
+import flask_whooshalchemy as wa
+
+
 # fuser -n tcp -k 9001
 
 
@@ -441,12 +444,14 @@ def load_user(user_id):
 
 class Post(db.Model):
     __tablename__ = 'posts'
+    __searchable__ = ['body', 'title']
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.Text)
     body = db.Column(db.Text)
     body_html = db.Column(db.Text)
-    timestamp = db.Column(db.DateTime, index = True, default = datetime.utcnow)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    author_username = db.Column(db.Text)
     comments = db.relationship('Comment', backref='post', lazy='dynamic')
     user_likes = db.relationship('PostLikes', backref=db.backref('post', lazy='joined'),
                                  lazy='dynamic', cascade='all, delete-orphan')
@@ -461,8 +466,10 @@ class Post(db.Model):
         for i in range(count):
             u = User.query.offset(randint(0, user_count - 1)).first()
             p = Post(body=forgery_py.lorem_ipsum.sentences(randint(1, 5)),
+                     title=forgery_py.lorem_ipsum.title(4),
                      timestamp=forgery_py.date.date(True),
-                     author=u)
+                     author=u,
+                     author_username=u.username)
             db.session.add(p)
             db.session.commit()
 

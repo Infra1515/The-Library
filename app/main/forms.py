@@ -87,6 +87,11 @@ class PMForm(FlaskForm):
     submit = SubmitField('Send')
 
 
+class SearchForm(FlaskForm):
+    by_username = StringField('Search by username')
+    by_post_title = StringField('Search by post title')
+    submit = SubmitField('Search')
+
 
 
 

@@ -3,8 +3,8 @@ from flask import render_template, redirect, url_for, abort, flash, request, \
 from flask_login import login_required, current_user
 from . import main
 from .forms import EditProfileForm, AdminEditProfileForm, UploadForm, PostForm, \
-    CommentForm, PMForm
-from .. import db
+    CommentForm, PMForm, SearchForm
+from .. import db, models
 from .. import images
 from ..models import Role, User, Permission, Post, Comment, PersonalMessage
 from ..decorators import admin_required, permission_required
@@ -34,7 +34,7 @@ def index():
                            pagination=pagination)
 
 
-@main.route('/new_post', methods=['GET','POST'])
+@main.route('/new_post', methods=['GET', 'POST'])
 @login_required
 def new_post():
     form = PostForm()
@@ -42,7 +42,8 @@ def new_post():
             form.validate_on_submit():
         post = Post(title=form.title.data,
                     body=form.body.data,
-                    author=current_user._get_current_object())
+                    author=current_user._get_current_object(),
+                    author_username= current_app._get_current_object().username)
         db.session.add(post)
         db.session.commit()
         return redirect(url_for('.index'))
@@ -383,3 +384,33 @@ def show_sent():
     resp.set_cookie('show_received', '', max_age=30*24*60*60)
     return resp
 
+
+@main.route('/search', methods=['GET', 'POST'])
+def search():
+    form = SearchForm()
+    if form.validate_on_submit:
+        if form.by_post_title.data == '' and form.by_username.data != '':
+            query = Post.query.filter(Post.author_username.ilike("%" + str(form.by_username.data) + "%"))
+        elif form.by_username.data == '' and form.by_post_title.data != '':
+            query = Post.query.filter(Post.title.ilike("%" + str(form.by_post_title.data) + "%"))
+            # query = Post.query.whoosh_search(form.by_post_title)
+        elif form.by_username.data != '' and form.by_post_title.data != '':
+            query = Post.query.filter(Post.title.ilike("%" + str(form.by_post_title.data) + "%"),
+                                      Post.author_username.ilike("%" + str(form.by_username.data) + "%"))
+        else:
+            query = Post.query
+        page = request.args.get('page', 1, type=int)
+        pagination = query.order_by(Post.timestamp.desc()).paginate(
+            page, per_page=current_app.config['THE_LIBRARY_POST_PER_PAGE'],
+            error_out=False)
+        posts = pagination.items
+        return render_template('search.html',
+                               pagination=pagination,
+                               posts=posts,
+                               form=form)
+    return render_template('search.html', form=form)
+
+
+# query = User.query.filter_by(username=form.by_username.data).posts
+# user = User.query.filter_by(username=username).first_or_404
+# posts = user.posts.order_by(Post.timestamp.desc()).all()
