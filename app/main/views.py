@@ -43,7 +43,7 @@ def new_post():
         post = Post(title=form.title.data,
                     body=form.body.data,
                     author=current_user._get_current_object(),
-                    author_username= current_app._get_current_object().username)
+                    author_username= current_user._get_current_object().username)
         db.session.add(post)
         db.session.commit()
         return redirect(url_for('.index'))

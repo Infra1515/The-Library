@@ -9,7 +9,7 @@ from flask_login import LoginManager
 from config import config
 from flask_uploads import UploadSet, IMAGES, configure_uploads
 from flask_pagedown import PageDown
-import flask_whooshalchemy as whooshalchemy
+# import flask_whooshalchemy as whooshalchemy
 import logging
 
 # Initializes the extensions without giving arguments to their
@@ -29,7 +29,7 @@ pagedown = PageDown()
 login_manager = LoginManager()
 login_manager.session_protection = "strong"
 login_manager.login_view = "auth.login"
-from .models import Post
+# from .models import Post
 def create_app(config_name):
     """
         This function is the application factory. Takes as an argument the name
@@ -47,7 +47,7 @@ def create_app(config_name):
     pagedown.init_app(app)
     login_manager.init_app(app)
     configure_uploads(app, images)
-    whooshalchemy.whoosh_index(app, Post)
+    # whooshalchemy.whoosh_index(app, Post)
 
 # Blueprint registration
     from .main import main as main_blueprint

@@ -7,7 +7,7 @@ from . import db, login_manager
 from markdown import markdown
 import bleach
 import hashlib
-import flask_whooshalchemy as wa
+# import flask_whooshalchemy as wa
 
 
 # fuser -n tcp -k 9001
@@ -444,7 +444,7 @@ def load_user(user_id):
 
 class Post(db.Model):
     __tablename__ = 'posts'
-    __searchable__ = ['body', 'title']
+    # __searchable__ = ['body', 'title']
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.Text)
     body = db.Column(db.Text)
