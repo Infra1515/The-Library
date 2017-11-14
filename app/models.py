@@ -69,6 +69,18 @@ class Role(db.Model):
     def __repr__(self):
         return '<Role %r>' % self.name
 
+#
+# class PostTags(db.Model):
+#     __tablename__ = 'posttags'
+#     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'),
+#                         primary_key=True)
+#     tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'),
+#                        primary_key=True)
+
+
+PostTags = db.Table('posttags',
+                    db.Column('post_id', db.Integer, db.ForeignKey('posts.id')),
+                    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id')))
 
 class Follow(db.Model):
     """ Self-referential many-to-many relationship table
@@ -95,7 +107,7 @@ class PersonalMessage(db.Model):
 
     __tablename__ = 'pm'
     id = db.Column(db.Integer, primary_key=True)
-    body = db.Column(db.Text);
+    body = db.Column(db.Text)
     body_html = db.Column(db.Text)
     subject = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
@@ -252,7 +264,7 @@ class User(UserMixin, db.Model):
         s = Serializer(current_app.config['SECRET_KEY'], expiration)
         return s.dumps({'confirm':self.id})
 
-    def confirm(self,token):
+    def confirm(self, token):
         """  Function to confirm token and expiration time is valid.
         To decode the token, the serializer object provides a loads() method
         that takes the token as its only argument. The function verifies the
@@ -406,6 +418,7 @@ class User(UserMixin, db.Model):
         return self.post_likes.filter_by(
             post_id=post.id).first() is not None
 
+
     @property
     def liked_posts(self):
         return Post.query.join(PostLikes, PostLikes.post_id == Post.id) \
@@ -453,8 +466,18 @@ class Post(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     author_username = db.Column(db.Text)
     comments = db.relationship('Comment', backref='post', lazy='dynamic')
-    user_likes = db.relationship('PostLikes', backref=db.backref('post', lazy='joined'),
-                                 lazy='dynamic', cascade='all, delete-orphan')
+    # tags = db.relationship('Tags', backref='tag', lazy='dynamic')
+    tags = db.relationship('Tags', secondary=PostTags,
+                           backref=db.backref('post', lazy='dynamic'),
+                           lazy='dynamic')
+    user_likes = db.relationship('PostLikes',
+                                 backref=db.backref('post', lazy='joined'),
+                                 lazy='dynamic',
+                                 cascade='all, delete-orphan')
+    # post_tags = db.relationship('PostTags',
+    #                             backref=db.backref('post', lazy='joined'),
+    #                             lazy='dynamic',
+    #                             cascade='all, delete-orphan')
 
     @staticmethod
     def generate_fake(count=100):
@@ -495,4 +518,22 @@ class Comment(db.Model):
     disabled = db.Column(db.Boolean)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
+
+
+class Tags(db.Model):
+    __tablename__ = 'tags'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Text, unique=True)
+    posts = db.relationship('Post', secondary=PostTags,
+                            backref=db.backref('tag', lazy='dynamic'),
+                            lazy='dynamic')
+    # tags_post = db.relationship('PostTags',
+    #                             backref=db.backref('tag', lazy='joined'),
+    #                             lazy='dynamic',
+    #                             cascade='all, delete-orphan')
+    # post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
+
+
+
+
 

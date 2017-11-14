@@ -6,7 +6,7 @@ from .forms import EditProfileForm, AdminEditProfileForm, UploadForm, PostForm, 
     CommentForm, PMForm, SearchForm
 from .. import db, models
 from .. import images
-from ..models import Role, User, Permission, Post, Comment, PersonalMessage
+from ..models import Role, User, Permission, Post, Comment, PersonalMessage, Tags
 from ..decorators import admin_required, permission_required
 from werkzeug.datastructures import CombinedMultiDict
 
@@ -46,9 +46,42 @@ def new_post():
                     author_username= current_user._get_current_object().username)
         db.session.add(post)
         db.session.commit()
+        tag_list = form.tags.data.split(' ')
+        for tag in tag_list:
+            t = Tags.query.filter_by(name=tag).first()
+            if t is None:
+                t = Tags(name=tag)
+                db.session.add(t)
+            post.tags.append(t)
+        db.session.commit()
         return redirect(url_for('.index'))
     return render_template('new_post.html', form=form)
 
+
+@main.route('/post/<int:id>', methods=['GET', 'POST'])
+def post(id):
+    post = Post.query.get_or_404(id)
+    form = CommentForm()
+    if form.validate_on_submit():
+        comment = Comment(body=form.body.data,
+                          post=post,
+                          author=current_user._get_current_object())
+        db.session.add(comment)
+        db.session.commit()
+        flash("Your comment has been published.")
+        return redirect(url_for('.post', id=post.id, page=1))
+    page = request.args.get('page', 1, type=int)
+    if page == -1:
+        page = (post.comments.count() - 1) // \
+            current_app.config['THE_LIBRARY_COMMENTS_PER_PAGE'] + 1
+    pagination = post.comments.order_by(Comment.timestamp.asc()).paginate(
+        page, per_page=current_app.config['THE_LIBRARY_COMMENTS_PER_PAGE'],
+          error_out=False)
+    tags = post.tags
+    comments = pagination.items
+    return render_template('post.html', posts=[post], form=form,
+                           comments=comments, tags=tags,
+                           pagination=pagination)
 
 
 @main.route('/user/<username>')
@@ -126,28 +159,7 @@ def upload_profile_picture():
             return redirect(url_for('.user', username=current_user.username))
     return render_template('profile_picture_upload.html', form=form)
 
-@main.route('/post/<int:id>', methods=['GET', 'POST'])
-def post(id):
-    post = Post.query.get_or_404(id)
-    form = CommentForm()
-    if form.validate_on_submit():
-        comment = Comment(body=form.body.data,
-                          post=post,
-                          author=current_user._get_current_object())
-        db.session.add(comment)
-        db.session.commit()
-        flash("Your comment has been published.")
-        return redirect(url_for('.post', id=post.id, page=1))
-    page = request.args.get('page', 1, type=int)
-    if page == -1:
-        page = (post.comments.count() - 1) // \
-            current_app.config['THE_LIBRARY_COMMENTS_PER_PAGE'] + 1
-    pagination = post.comments.order_by(Comment.timestamp.asc()).paginate(
-        page, per_page=current_app.config['THE_LIBRARY_COMMENTS_PER_PAGE'],
-          error_out=False)
-    comments = pagination.items
-    return render_template('post.html', posts=[post], form=form,
-                           comments=comments, pagination=pagination)
+
 
 
 @main.route('/edit/<int:id>', methods=['GET', 'POST'])
@@ -257,7 +269,6 @@ def show_liked():
     resp = make_response(redirect(url_for('.index')))
     resp.set_cookie('show_liked', '1', max_age=30*24*60*60)
     return resp
-
 
 
 @main.route('/moderate')
@@ -411,6 +422,27 @@ def search():
     return render_template('search.html', form=form)
 
 
+@main.route('/search/post/<tagname>', methods=['GET', 'POST'])
+def post_tags(tagname):
+    tag = Tags.query.filter_by(name=tagname).first()
+    if tag is None:
+        flash("No such tag!")
+        return redirect(url_for('.index'))
+    page = request.args.get('page', 1, type=int)
+    pagination = tag.posts.order_by(Post.timestamp.desc()).paginate(
+        page, per_page=current_app.config['THE_LIBRARY_COMMENTS_PER_PAGE'],
+        error_out=False)
+    posts = pagination.items
+    return render_template('posts_tag.html', posts=posts,
+                           pagination=pagination, tag=tag)
+
+
+
 # query = User.query.filter_by(username=form.by_username.data).posts
 # user = User.query.filter_by(username=username).first_or_404
 # posts = user.posts.order_by(Post.timestamp.desc()).all()
+# @main.route('/user/<username>')
+# def user(username):
+#     user = User.query.filter_by(username=username).first_or_404()
+#     posts = user.posts.order_by(Post.timestamp.desc()).all()
+#     return render_template('user.html', user=user, posts=posts)

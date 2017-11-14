@@ -72,6 +72,7 @@ class UploadForm(FlaskForm):
 class PostForm(FlaskForm):
     title = StringField("Title", [InputRequired()])
     body = PageDownField("Express yourself!", validators=[Required()])
+    tags = StringField("Post Tags")
     submit = SubmitField('Go')
 
 
