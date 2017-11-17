@@ -1,10 +1,11 @@
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import current_app, request
+from flask import current_app, request, url_for
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from flask_login import UserMixin, AnonymousUserMixin
 from . import db, login_manager
 from markdown import markdown
+from app.exceptions import ValidationError
 import bleach
 import hashlib
 # import flask_whooshalchemy as wa
@@ -328,6 +329,21 @@ class User(UserMixin, db.Model):
         db.session.commit()
         return True
 
+    # functions related to API functionality
+    def generate_auth_token(self, expiration):
+        s = Serializer(current_app.config['SECRET_KEY'],
+                       expires_in=expiration)
+        return s.dumps({'id' : self.id})
+
+    @staticmethod
+    def verify_auth_token(token):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except:
+            return None
+        return User.query.get(data['id'])
+
     # functions for evaluating whether a user has a role
     def can(self, permissions):
         """
@@ -424,6 +440,19 @@ class User(UserMixin, db.Model):
         return Post.query.join(PostLikes, PostLikes.post_id == Post.id) \
             .filter(PostLikes.user_id == self.id)
 
+    def to_json(self):
+        json_user = {
+            'url': url_for('api.get_user', id=self.id, _external=True),
+            'username': self.username,
+            'member_since': self.member_since,
+            'last_seen': self.last_seen,
+            'posts': url_for('api.get_user_posts', id=self.id, _external=True),
+            'followed_posts': url_for('api.get_user_followed_posts', id=self.id, _external=True),
+            # 'liked_posts': url_for('api.get_user_liked_posts', id=self.id, _external=True),
+            'post_count': self.posts.count()
+        }
+        return json_user
+
     def __repr__(self):
         return '<User %r>' % self.username
 
@@ -504,6 +533,26 @@ class Post(db.Model):
         target.body_html = bleach.linkify(bleach.clean(
             markdown(value, output_format='html'),
             tags=allowed_tags, strip=True))
+
+    def to_json(self):
+        json_post = {
+            'url': url_for('api.get_post', id=self.id, _external=True),
+            'body': self.body,
+            'body_html': self.body_html,
+            'author': url_for('api.get_user', id=self.author_id,
+                              _external=True),
+            'comments': url_for('api.get_post_comments', id=self.id,
+                                _external=True),
+            'comment_count': self.comments.count()
+        }
+        return json_post
+
+    @staticmethod
+    def from_json(json_post):
+        body = json_post.get('body')
+        if body is None or body == '':
+            raise ValidationError('post does not have a body')
+        return Post(body=body)
 
 
 db.event.listen(Post.body, 'set', Post.on_changed_body)
